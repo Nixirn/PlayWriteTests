@@ -19,12 +19,13 @@ test.describe('Ensure posts are ordered from most to least recent', () => {
         for(let i = 0; i < 100; i++) {
             let mod = i % MAX_TABLE_ENTRIES;
 
-            // Refresh Saved table when all entries have been read
+            // Refresh Saved table every time the maximum number of tables entries have been read
             if(mod == 0 && i > 0)  { 
                 await page.getByRole('link', { name: 'More', exact: true }).click();
                 all = await postTable.all();
             }
 
+            // Parse text and compare with previous time value. Save current time as previous for the next loop
             let text = await (await all).at(mod)?.textContent();
             if(isOutOfOrder(parsePostTime(text), previousTime)) {
                 throw new Error("Found entry out of order!");
@@ -35,18 +36,20 @@ test.describe('Ensure posts are ordered from most to least recent', () => {
 })
 
 const isOutOfOrder = (time, previous) => {
+    // Return false if there is no previous (First entry)
     if(previous == -1) {
         return false;
+    // Return true if the previous time value is greater then the current
     } else if (time - previous < 0) {
         return true;
     } else {
         return false;
     }
-
 }
 
 const parsePostTime = (postTimeText) => {
     const matchArr = postTimeText.match(TIME_AGO_REGEX); // 0: full str, 1: time name 
+    // Increment time number based on time name
     switch (matchArr[1]) {
         case 'minute':
         case 'minutes':
